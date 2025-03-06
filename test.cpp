@@ -1,8 +1,11 @@
 #include <iostream>
+#include <windows.h>
 
 int main() {
+   
     std::cout << "Hello, World!" << std::endl;
-
+    Sleep(1000);
+    
     // This is a comment
     // This is another comment
     // This is a third comment
