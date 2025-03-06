@@ -2,6 +2,7 @@
 #include <windows.h>
 int doSomething() {
     return 0;       // This is a comment
+        // this is a comment 2
 }
 int main() {
    
