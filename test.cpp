@@ -1,6 +1,8 @@
 #include <iostream>
 #include <windows.h>
-
+int doSomething() {
+    return 0;       // This is a comment
+}
 int main() {
    
     std::cout << "Hello, World!" << std::endl;
