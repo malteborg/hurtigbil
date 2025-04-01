@@ -10,6 +10,7 @@
 #include <time.h>
 #include <util/delay.h>
 #include "DriveTheCarFunctions.h"
+#define __AVR_ATmega328P__
 
 void Port_init();            // Prototype til funktionen ...
 void Init_ADCxyz( uint8_t);   // Prototype til funktionen ...
@@ -46,7 +47,7 @@ int main(void)
     */
     
     while (1) {
-	    // Læs et tegn fra UART
+	    // Lï¿½s et tegn fra UART
 	    ch = read();
 
 	    // Tjek for gyldige kommandoer, ellers spring iterationen over
@@ -58,7 +59,7 @@ int main(void)
 		    MainState = 4;
 		    }
 
-	    // Switch-case, der udfører handling baseret på den modtagne kommando
+	    // Switch-case, der udfï¿½rer handling baseret pï¿½ den modtagne kommando
 	    switch (MainState) {
 			 // SET SPEED
 			    case 1:{
@@ -93,7 +94,7 @@ int main(void)
 				    if (FIFO_out.count <= 2) {
 					    writestr("Buffer underflow - data tabt", CR+LF);
 				    }
-				    // Afslut måling, hvis der modtages 'd' igen
+				    // Afslut mï¿½ling, hvis der modtages 'd' igen
 				    if (read() == 'd') {
 					    break;
 				    }
