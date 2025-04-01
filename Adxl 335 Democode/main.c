@@ -1,12 +1,12 @@
 /****************** ADXL335_demo ************************************************
  * Created: 11-02-2025 14:24:22 - Author: JJ
  */ 
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include "AVR_include/avr8/avr/include/avr/io.h"
+#include "avr/interrupt.h"
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+#include "time.h"
 #include "UART_driver.h"
 #include "DriveTheCarFunctions.h"
 
