@@ -32,6 +32,7 @@ int main(void)
     uint8_t CMD_Latch;
     uint8_t ReadDone;
 
+
     PWM_init();
     Port_init();
     Init_Serial_Port_and_FIFO(9600);  // 9600, 14400, 19200, 38400, 57600, 115200 standards
@@ -57,25 +58,28 @@ int main(void)
 				MainState = 2;
 			} else if (ch == 'b') {
 				MainState = 3;
+			} else if (ch == 'a') {
+				MainState = 4;
 			}
+			
 		}
 	    // Switch-case, der udfører handling baseret på den modtagne kommando
 	    switch (MainState) {
 			 // SET SPEED
 			    case 1:{
 				    CMD_Latch = 1;
-				    writestr("Input hastighed i %:", CR+LF);
+				    writestr("Input hastighed i 10%:", CR+LF);
 
 			    while(CMD_Latch == 1) {
-				    setSpeed = readint();
+				    int temp = readint();
+					setSpeed = temp;
 					if(readint()){
-					writestr("Speed set:", CR+LF);
-					int output = setSpeed*10;
-					write(output);
+						writestr("Speed set", CR+LF);
+						writestr(temp, CR+LF);
 					CMD_Latch = 0;
 					}
 				}
-				OCR2 = (255 / 100) * setSpeed; 
+				OCR2 = (255 / 10) * setSpeed; 
 			    MainState = 0;
 				break;
 				}
@@ -102,14 +106,24 @@ int main(void)
 		    
 		    case 3: {
 			    writestr("Brems", CR+LF);
-			    PORTB = 0b00000001;
-			    _delay_ms(100);
-			    PORTB = 0b00000000;
+			    PORTC = 0b00000010;
+			    _delay_ms(1000);
+			    PORTC = 0b00000000;
 			    writestr("Koer", CR+LF);
 			    MainState = 0;
 				break;
 		    }
-	    } // end switch
+			
+			case 4: {
+				writestr("NITRO", CR+LF);
+				PORTB = 0b00000010;
+				_delay_ms(100);
+				PORTB = 0b00000000;
+				writestr("nitro done", CR+LF);
+				MainState = 0;
+				break;
+				}
+			} // end switch
     } // end while
 
 } // end main
@@ -202,8 +216,8 @@ void Init_ADCxyz(uint8_t channel)
 void Port_init()
 {
     DDRD  = DDRD & ~(0x44);   // setup PORTD, bit6 and bit2 as input
-    DDRC  = 0;                // PORTC as input
-    PORTC = 0xFF;             // With internal pull-up resistors
+    DDRC  = 0xFF;                // PORTC as output
+    PORTC = 0x00;             // With internal pull-up resistors
     DDRB  = 0xFF;             // setup PORTB as output
     PORTB = 0xFF;             // and turn LEDs off
     DDRA  = 0x00;             // setup PORTA as input
