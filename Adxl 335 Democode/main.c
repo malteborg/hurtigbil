@@ -31,12 +31,19 @@ int main(void)
     uint8_t setSpeed = 0;         // set-point for desired speed, starts at 0
     uint8_t CMD_Latch;
     uint8_t ReadDone;
+	int SwingState;			//State of swing, LEFT, RIGHT, STRAIGHT
+	int Old_state;			// logically OLD state
+	
 
 
     PWM_init();
     Port_init();
     Init_Serial_Port_and_FIFO(9600);  // 9600, 14400, 19200, 38400, 57600, 115200 standards
-    sei();                            // Enable Global Interrupt
+    INITSwingDetector();
+    INITadc();
+    INITexternalInterrupt();
+	
+	sei();                            // Enable Global Interrupt
     writestr("Tryk z for speed control.", CR+LF);
 	writestr("Tryk d for accelerometer logger.", CR+LF);
 	writestr("Tryk b for brems.", CR+LF);
@@ -64,7 +71,10 @@ int main(void)
 			} else if (ch == 'm') {
 			MainState = 5;
 		}
-			
+		if (Old_state != SwingState){
+			Old_state =	SwingState;
+			writestr(SwingState);
+		}
 		}
 	    // Switch-case, der udfører handling baseret på den modtagne kommando
 	    switch (MainState) {
