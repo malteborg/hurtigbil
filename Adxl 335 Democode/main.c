@@ -11,7 +11,7 @@
 #include <util/delay.h>
 #include "DriveTheCarFunctions.h"
 #include "GForce.h"
-
+#include "maalbaneFunction.c"
 void Port_init();            // Prototype til funktionen ...
 void Init_ADCxyz(uint8_t);   // Prototype til funktionen ...
 void ADXL335_logger();       // Prototype til funktionen ...
@@ -42,6 +42,7 @@ int main(void)
 	writestr("Tryk b for brems.", CR+LF);
     writestr("", CR+LF);
     //======================================================================
+	
 
 
     
@@ -60,7 +61,9 @@ int main(void)
 				MainState = 3;
 			} else if (ch == 'a') {
 				MainState = 4;
-			}
+			} else if (ch == 'm') {
+			MainState = 5;
+		}
 			
 		}
 	    // Switch-case, der udfører handling baseret på den modtagne kommando
@@ -123,6 +126,14 @@ int main(void)
 				MainState = 0;
 				break;
 				}
+			case 5: {
+				int bane[50];
+				writestr("Maaling af bane", CR+LF);
+				bane[50] = maaleBaneFunction();
+				MainState = 0;
+				break;
+			}
+				
 			} // end switch
     } // end while
 
