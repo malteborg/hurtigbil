@@ -1,0 +1,451 @@
+
+GccApplication8.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000364  00000000  00000000  00000094  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         0000004c  00800060  00000364  000003f8  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000006  008000ac  008000ac  00000444  2**0
+                  ALLOC
+  3 .comment      00000030  00000000  00000000  00000444  2**0
+                  CONTENTS, READONLY
+  4 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00000474  2**2
+                  CONTENTS, READONLY
+  5 .debug_aranges 00000098  00000000  00000000  000004b0  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  6 .debug_info   00000aad  00000000  00000000  00000548  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_abbrev 00000743  00000000  00000000  00000ff5  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_line   000005ab  00000000  00000000  00001738  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_frame  000001d8  00000000  00000000  00001ce4  2**2
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .debug_str    000004aa  00000000  00000000  00001ebc  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 11 .debug_loc    000003f0  00000000  00000000  00002366  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 12 .debug_ranges 00000088  00000000  00000000  00002756  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	0c 94 2a 00 	jmp	0x54	; 0x54 <__ctors_end>
+   4:	0c 94 88 01 	jmp	0x310	; 0x310 <__vector_1>
+   8:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+   c:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  10:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  14:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  18:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  1c:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  20:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  24:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  28:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  2c:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  30:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  34:	0c 94 5c 01 	jmp	0x2b8	; 0x2b8 <__vector_13>
+  38:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  3c:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  40:	0c 94 45 01 	jmp	0x28a	; 0x28a <__vector_16>
+  44:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  48:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  4c:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  50:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+
+00000054 <__ctors_end>:
+  54:	11 24       	eor	r1, r1
+  56:	1f be       	out	0x3f, r1	; 63
+  58:	cf e5       	ldi	r28, 0x5F	; 95
+  5a:	d8 e0       	ldi	r29, 0x08	; 8
+  5c:	de bf       	out	0x3e, r29	; 62
+  5e:	cd bf       	out	0x3d, r28	; 61
+
+00000060 <__do_copy_data>:
+  60:	10 e0       	ldi	r17, 0x00	; 0
+  62:	a0 e6       	ldi	r26, 0x60	; 96
+  64:	b0 e0       	ldi	r27, 0x00	; 0
+  66:	e4 e6       	ldi	r30, 0x64	; 100
+  68:	f3 e0       	ldi	r31, 0x03	; 3
+  6a:	02 c0       	rjmp	.+4      	; 0x70 <__do_copy_data+0x10>
+  6c:	05 90       	lpm	r0, Z+
+  6e:	0d 92       	st	X+, r0
+  70:	ac 3a       	cpi	r26, 0xAC	; 172
+  72:	b1 07       	cpc	r27, r17
+  74:	d9 f7       	brne	.-10     	; 0x6c <__do_copy_data+0xc>
+
+00000076 <__do_clear_bss>:
+  76:	20 e0       	ldi	r18, 0x00	; 0
+  78:	ac ea       	ldi	r26, 0xAC	; 172
+  7a:	b0 e0       	ldi	r27, 0x00	; 0
+  7c:	01 c0       	rjmp	.+2      	; 0x80 <.do_clear_bss_start>
+
+0000007e <.do_clear_bss_loop>:
+  7e:	1d 92       	st	X+, r1
+
+00000080 <.do_clear_bss_start>:
+  80:	a2 3b       	cpi	r26, 0xB2	; 178
+  82:	b2 07       	cpc	r27, r18
+  84:	e1 f7       	brne	.-8      	; 0x7e <.do_clear_bss_loop>
+  86:	0e 94 e4 00 	call	0x1c8	; 0x1c8 <main>
+  8a:	0c 94 b0 01 	jmp	0x360	; 0x360 <_exit>
+
+0000008e <__bad_interrupt>:
+  8e:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
+
+00000092 <portsetup>:
+		if (readIntCMD == 'L'){
+			SetpointRIGHTturn = TemporarySetpoint;
+			break;
+		}
+		if (readIntCMD == 'S'){
+			SetpointRIGHTturn = TemporarySetpoint;
+  92:	1a ba       	out	0x1a, r1	; 26
+  94:	1b ba       	out	0x1b, r1	; 27
+  96:	8f ef       	ldi	r24, 0xFF	; 255
+  98:	87 bb       	out	0x17, r24	; 23
+  9a:	84 bb       	out	0x14, r24	; 20
+  9c:	11 ba       	out	0x11, r1	; 17
+  9e:	82 bb       	out	0x12, r24	; 18
+  a0:	08 95       	ret
+
+000000a2 <INITuart>:
+  a2:	10 bc       	out	0x20, r1	; 32
+  a4:	84 e3       	ldi	r24, 0x34	; 52
+  a6:	89 b9       	out	0x09, r24	; 9
+  a8:	88 e9       	ldi	r24, 0x98	; 152
+  aa:	8a b9       	out	0x0a, r24	; 10
+  ac:	08 95       	ret
+
+000000ae <INITadc>:
+  ae:	1a ba       	out	0x1a, r1	; 26
+  b0:	1b ba       	out	0x1b, r1	; 27
+  b2:	80 e2       	ldi	r24, 0x20	; 32
+  b4:	87 b9       	out	0x07, r24	; 7
+  b6:	8c ec       	ldi	r24, 0xCC	; 204
+  b8:	86 b9       	out	0x06, r24	; 6
+  ba:	08 95       	ret
+
+000000bc <INITexternalInterrupt>:
+  bc:	8e e0       	ldi	r24, 0x0E	; 14
+  be:	85 bf       	out	0x35, r24	; 53
+  c0:	80 ec       	ldi	r24, 0xC0	; 192
+  c2:	8b bf       	out	0x3b, r24	; 59
+  c4:	08 95       	ret
+
+000000c6 <SwingDetector>:
+  c6:	20 91 ae 00 	lds	r18, 0x00AE	; 0x8000ae <SwingState>
+  ca:	30 91 af 00 	lds	r19, 0x00AF	; 0x8000af <SwingState+0x1>
+  ce:	21 30       	cpi	r18, 0x01	; 1
+  d0:	31 05       	cpc	r19, r1
+  d2:	31 f1       	breq	.+76     	; 0x120 <SwingDetector+0x5a>
+  d4:	22 30       	cpi	r18, 0x02	; 2
+  d6:	31 05       	cpc	r19, r1
+  d8:	79 f1       	breq	.+94     	; 0x138 <SwingDetector+0x72>
+  da:	23 2b       	or	r18, r19
+  dc:	f1 f5       	brne	.+124    	; 0x15a <SwingDetector+0x94>
+  de:	20 91 62 00 	lds	r18, 0x0062	; 0x800062 <SetpointLEFTturn>
+  e2:	30 91 63 00 	lds	r19, 0x0063	; 0x800063 <SetpointLEFTturn+0x1>
+  e6:	28 17       	cp	r18, r24
+  e8:	39 07       	cpc	r19, r25
+  ea:	34 f4       	brge	.+12     	; 0xf8 <SwingDetector+0x32>
+  ec:	21 e0       	ldi	r18, 0x01	; 1
+  ee:	30 e0       	ldi	r19, 0x00	; 0
+  f0:	30 93 af 00 	sts	0x00AF, r19	; 0x8000af <SwingState+0x1>
+  f4:	20 93 ae 00 	sts	0x00AE, r18	; 0x8000ae <SwingState>
+  f8:	20 91 60 00 	lds	r18, 0x0060	; 0x800060 <__DATA_REGION_ORIGIN__>
+  fc:	30 91 61 00 	lds	r19, 0x0061	; 0x800061 <__DATA_REGION_ORIGIN__+0x1>
+ 100:	40 91 64 00 	lds	r20, 0x0064	; 0x800064 <SetpointRIGHTturn>
+ 104:	50 91 65 00 	lds	r21, 0x0065	; 0x800065 <SetpointRIGHTturn+0x1>
+ 108:	24 1b       	sub	r18, r20
+ 10a:	35 0b       	sbc	r19, r21
+ 10c:	82 17       	cp	r24, r18
+ 10e:	93 07       	cpc	r25, r19
+ 110:	24 f5       	brge	.+72     	; 0x15a <SwingDetector+0x94>
+ 112:	82 e0       	ldi	r24, 0x02	; 2
+ 114:	90 e0       	ldi	r25, 0x00	; 0
+ 116:	90 93 af 00 	sts	0x00AF, r25	; 0x8000af <SwingState+0x1>
+ 11a:	80 93 ae 00 	sts	0x00AE, r24	; 0x8000ae <SwingState>
+ 11e:	1d c0       	rjmp	.+58     	; 0x15a <SwingDetector+0x94>
+ 120:	20 91 62 00 	lds	r18, 0x0062	; 0x800062 <SetpointLEFTturn>
+ 124:	30 91 63 00 	lds	r19, 0x0063	; 0x800063 <SetpointLEFTturn+0x1>
+ 128:	82 17       	cp	r24, r18
+ 12a:	93 07       	cpc	r25, r19
+ 12c:	b4 f4       	brge	.+44     	; 0x15a <SwingDetector+0x94>
+ 12e:	10 92 af 00 	sts	0x00AF, r1	; 0x8000af <SwingState+0x1>
+ 132:	10 92 ae 00 	sts	0x00AE, r1	; 0x8000ae <SwingState>
+ 136:	11 c0       	rjmp	.+34     	; 0x15a <SwingDetector+0x94>
+ 138:	20 91 60 00 	lds	r18, 0x0060	; 0x800060 <__DATA_REGION_ORIGIN__>
+ 13c:	30 91 61 00 	lds	r19, 0x0061	; 0x800061 <__DATA_REGION_ORIGIN__+0x1>
+ 140:	40 91 64 00 	lds	r20, 0x0064	; 0x800064 <SetpointRIGHTturn>
+ 144:	50 91 65 00 	lds	r21, 0x0065	; 0x800065 <SetpointRIGHTturn+0x1>
+ 148:	24 1b       	sub	r18, r20
+ 14a:	35 0b       	sbc	r19, r21
+ 14c:	28 17       	cp	r18, r24
+ 14e:	39 07       	cpc	r19, r25
+ 150:	24 f4       	brge	.+8      	; 0x15a <SwingDetector+0x94>
+ 152:	10 92 af 00 	sts	0x00AF, r1	; 0x8000af <SwingState+0x1>
+ 156:	10 92 ae 00 	sts	0x00AE, r1	; 0x8000ae <SwingState>
+ 15a:	80 91 ae 00 	lds	r24, 0x00AE	; 0x8000ae <SwingState>
+ 15e:	90 91 af 00 	lds	r25, 0x00AF	; 0x8000af <SwingState+0x1>
+ 162:	08 95       	ret
+
+00000164 <PWM_init>:
+ 164:	81 b3       	in	r24, 0x11	; 17
+ 166:	80 68       	ori	r24, 0x80	; 128
+ 168:	81 bb       	out	0x11, r24	; 17
+ 16a:	85 b5       	in	r24, 0x25	; 37
+ 16c:	88 64       	ori	r24, 0x48	; 72
+ 16e:	85 bd       	out	0x25, r24	; 37
+ 170:	85 b5       	in	r24, 0x25	; 37
+ 172:	80 62       	ori	r24, 0x20	; 32
+ 174:	85 bd       	out	0x25, r24	; 37
+ 176:	85 b5       	in	r24, 0x25	; 37
+ 178:	82 60       	ori	r24, 0x02	; 2
+ 17a:	85 bd       	out	0x25, r24	; 37
+ 17c:	08 95       	ret
+
+0000017e <sendString>:
+ 17e:	ac 01       	movw	r20, r24
+ 180:	90 e0       	ldi	r25, 0x00	; 0
+ 182:	04 c0       	rjmp	.+8      	; 0x18c <sendString+0xe>
+ 184:	5d 9b       	sbis	0x0b, 5	; 11
+ 186:	fe cf       	rjmp	.-4      	; 0x184 <sendString+0x6>
+ 188:	2c b9       	out	0x0c, r18	; 12
+ 18a:	9f 5f       	subi	r25, 0xFF	; 255
+ 18c:	fa 01       	movw	r30, r20
+ 18e:	e9 0f       	add	r30, r25
+ 190:	f1 1d       	adc	r31, r1
+ 192:	20 81       	ld	r18, Z
+ 194:	21 11       	cpse	r18, r1
+ 196:	f6 cf       	rjmp	.-20     	; 0x184 <sendString+0x6>
+ 198:	5d 9b       	sbis	0x0b, 5	; 11
+ 19a:	fe cf       	rjmp	.-4      	; 0x198 <sendString+0x1a>
+ 19c:	8a e0       	ldi	r24, 0x0A	; 10
+ 19e:	8c b9       	out	0x0c, r24	; 12
+ 1a0:	08 95       	ret
+
+000001a2 <brems>:
+ 1a2:	86 e6       	ldi	r24, 0x66	; 102
+ 1a4:	90 e0       	ldi	r25, 0x00	; 0
+ 1a6:	0e 94 bf 00 	call	0x17e	; 0x17e <sendString>
+ 1aa:	82 e0       	ldi	r24, 0x02	; 2
+ 1ac:	85 bb       	out	0x15, r24	; 21
+ 1ae:	88 bb       	out	0x18, r24	; 24
+ 1b0:	2f e3       	ldi	r18, 0x3F	; 63
+ 1b2:	8d e0       	ldi	r24, 0x0D	; 13
+ 1b4:	93 e0       	ldi	r25, 0x03	; 3
+ 1b6:	21 50       	subi	r18, 0x01	; 1
+ 1b8:	80 40       	sbci	r24, 0x00	; 0
+ 1ba:	90 40       	sbci	r25, 0x00	; 0
+ 1bc:	e1 f7       	brne	.-8      	; 0x1b6 <brems+0x14>
+ 1be:	00 c0       	rjmp	.+0      	; 0x1c0 <brems+0x1e>
+ 1c0:	00 00       	nop
+ 1c2:	15 ba       	out	0x15, r1	; 21
+ 1c4:	18 ba       	out	0x18, r1	; 24
+ 1c6:	08 95       	ret
+
+000001c8 <main>:
+ 1c8:	78 94       	sei
+ 1ca:	0e 94 49 00 	call	0x92	; 0x92 <portsetup>
+ 1ce:	0e 94 51 00 	call	0xa2	; 0xa2 <INITuart>
+ 1d2:	0e 94 57 00 	call	0xae	; 0xae <INITadc>
+ 1d6:	0e 94 5e 00 	call	0xbc	; 0xbc <INITexternalInterrupt>
+ 1da:	0e 94 b2 00 	call	0x164	; 0x164 <PWM_init>
+ 1de:	2f eb       	ldi	r18, 0xBF	; 191
+ 1e0:	87 e2       	ldi	r24, 0x27	; 39
+ 1e2:	99 e0       	ldi	r25, 0x09	; 9
+ 1e4:	21 50       	subi	r18, 0x01	; 1
+ 1e6:	80 40       	sbci	r24, 0x00	; 0
+ 1e8:	90 40       	sbci	r25, 0x00	; 0
+ 1ea:	e1 f7       	brne	.-8      	; 0x1e4 <main+0x1c>
+ 1ec:	00 c0       	rjmp	.+0      	; 0x1ee <main+0x26>
+ 1ee:	00 00       	nop
+ 1f0:	10 92 ad 00 	sts	0x00AD, r1	; 0x8000ad <__data_end+0x1>
+ 1f4:	10 92 ac 00 	sts	0x00AC, r1	; 0x8000ac <__data_end>
+ 1f8:	80 91 ac 00 	lds	r24, 0x00AC	; 0x8000ac <__data_end>
+ 1fc:	90 91 ad 00 	lds	r25, 0x00AD	; 0x8000ad <__data_end+0x1>
+ 200:	83 bd       	out	0x23, r24	; 35
+ 202:	8f ef       	ldi	r24, 0xFF	; 255
+ 204:	88 bb       	out	0x18, r24	; 24
+ 206:	80 91 ac 00 	lds	r24, 0x00AC	; 0x8000ac <__data_end>
+ 20a:	90 91 ad 00 	lds	r25, 0x00AD	; 0x8000ad <__data_end+0x1>
+ 20e:	88 0f       	add	r24, r24
+ 210:	83 bd       	out	0x23, r24	; 35
+ 212:	c0 91 ae 00 	lds	r28, 0x00AE	; 0x8000ae <SwingState>
+ 216:	d0 91 af 00 	lds	r29, 0x00AF	; 0x8000af <SwingState+0x1>
+ 21a:	80 91 b0 00 	lds	r24, 0x00B0	; 0x8000b0 <ACCvalue>
+ 21e:	90 91 b1 00 	lds	r25, 0x00B1	; 0x8000b1 <ACCvalue+0x1>
+ 222:	0e 94 63 00 	call	0xc6	; 0xc6 <SwingDetector>
+ 226:	90 93 af 00 	sts	0x00AF, r25	; 0x8000af <SwingState+0x1>
+ 22a:	80 93 ae 00 	sts	0x00AE, r24	; 0x8000ae <SwingState>
+ 22e:	80 91 ae 00 	lds	r24, 0x00AE	; 0x8000ae <SwingState>
+ 232:	90 91 af 00 	lds	r25, 0x00AF	; 0x8000af <SwingState+0x1>
+ 236:	c8 17       	cp	r28, r24
+ 238:	d9 07       	cpc	r29, r25
+ 23a:	29 f3       	breq	.-54     	; 0x206 <main+0x3e>
+ 23c:	80 91 ae 00 	lds	r24, 0x00AE	; 0x8000ae <SwingState>
+ 240:	90 91 af 00 	lds	r25, 0x00AF	; 0x8000af <SwingState+0x1>
+ 244:	0e 94 d1 00 	call	0x1a2	; 0x1a2 <brems>
+ 248:	80 91 ae 00 	lds	r24, 0x00AE	; 0x8000ae <SwingState>
+ 24c:	90 91 af 00 	lds	r25, 0x00AF	; 0x8000af <SwingState+0x1>
+ 250:	89 2b       	or	r24, r25
+ 252:	29 f4       	brne	.+10     	; 0x25e <main+0x96>
+ 254:	80 e7       	ldi	r24, 0x70	; 112
+ 256:	90 e0       	ldi	r25, 0x00	; 0
+ 258:	0e 94 bf 00 	call	0x17e	; 0x17e <sendString>
+ 25c:	d4 cf       	rjmp	.-88     	; 0x206 <main+0x3e>
+ 25e:	80 91 ae 00 	lds	r24, 0x00AE	; 0x8000ae <SwingState>
+ 262:	90 91 af 00 	lds	r25, 0x00AF	; 0x8000af <SwingState+0x1>
+ 266:	02 97       	sbiw	r24, 0x02	; 2
+ 268:	29 f4       	brne	.+10     	; 0x274 <main+0xac>
+ 26a:	89 e7       	ldi	r24, 0x79	; 121
+ 26c:	90 e0       	ldi	r25, 0x00	; 0
+ 26e:	0e 94 bf 00 	call	0x17e	; 0x17e <sendString>
+ 272:	c9 cf       	rjmp	.-110    	; 0x206 <main+0x3e>
+ 274:	80 91 ae 00 	lds	r24, 0x00AE	; 0x8000ae <SwingState>
+ 278:	90 91 af 00 	lds	r25, 0x00AF	; 0x8000af <SwingState+0x1>
+ 27c:	01 97       	sbiw	r24, 0x01	; 1
+ 27e:	19 f6       	brne	.-122    	; 0x206 <main+0x3e>
+ 280:	8f e7       	ldi	r24, 0x7F	; 127
+ 282:	90 e0       	ldi	r25, 0x00	; 0
+ 284:	0e 94 bf 00 	call	0x17e	; 0x17e <sendString>
+ 288:	be cf       	rjmp	.-132    	; 0x206 <main+0x3e>
+
+0000028a <__vector_16>:
+	readIntCMD = inbuf[ix];           // Command found
+	int indtal  = atoi(&inbuf[ix+1]);  // Convert ASCII string to integer
+	return indtal;
+}
+
+ISR(ADC_vect){
+ 28a:	1f 92       	push	r1
+ 28c:	0f 92       	push	r0
+ 28e:	0f b6       	in	r0, 0x3f	; 63
+ 290:	0f 92       	push	r0
+ 292:	11 24       	eor	r1, r1
+ 294:	8f 93       	push	r24
+ 296:	9f 93       	push	r25
+	
+	ACCvalue = ADCH;
+ 298:	85 b1       	in	r24, 0x05	; 5
+ 29a:	90 e0       	ldi	r25, 0x00	; 0
+ 29c:	90 93 b1 00 	sts	0x00B1, r25	; 0x8000b1 <ACCvalue+0x1>
+ 2a0:	80 93 b0 00 	sts	0x00B0, r24	; 0x8000b0 <ACCvalue>
+	
+	ADCSRA |= (1<<ADSC); // Start conversion.
+ 2a4:	86 b1       	in	r24, 0x06	; 6
+ 2a6:	80 64       	ori	r24, 0x40	; 64
+ 2a8:	86 b9       	out	0x06, r24	; 6
+}
+ 2aa:	9f 91       	pop	r25
+ 2ac:	8f 91       	pop	r24
+ 2ae:	0f 90       	pop	r0
+ 2b0:	0f be       	out	0x3f, r0	; 63
+ 2b2:	0f 90       	pop	r0
+ 2b4:	1f 90       	pop	r1
+ 2b6:	18 95       	reti
+
+000002b8 <__vector_13>:
+
+ISR(USART_RXC_vect){
+ 2b8:	1f 92       	push	r1
+ 2ba:	0f 92       	push	r0
+ 2bc:	0f b6       	in	r0, 0x3f	; 63
+ 2be:	0f 92       	push	r0
+ 2c0:	11 24       	eor	r1, r1
+ 2c2:	2f 93       	push	r18
+ 2c4:	3f 93       	push	r19
+ 2c6:	4f 93       	push	r20
+ 2c8:	5f 93       	push	r21
+ 2ca:	6f 93       	push	r22
+ 2cc:	7f 93       	push	r23
+ 2ce:	8f 93       	push	r24
+ 2d0:	9f 93       	push	r25
+ 2d2:	af 93       	push	r26
+ 2d4:	bf 93       	push	r27
+ 2d6:	ef 93       	push	r30
+ 2d8:	ff 93       	push	r31
+	
+	setpointPWM = UDR;
+ 2da:	8c b1       	in	r24, 0x0c	; 12
+ 2dc:	90 e0       	ldi	r25, 0x00	; 0
+ 2de:	90 93 ad 00 	sts	0x00AD, r25	; 0x8000ad <__data_end+0x1>
+ 2e2:	80 93 ac 00 	sts	0x00AC, r24	; 0x8000ac <__data_end>
+	sendString("recieved PWM");
+ 2e6:	85 e9       	ldi	r24, 0x95	; 149
+ 2e8:	90 e0       	ldi	r25, 0x00	; 0
+ 2ea:	0e 94 bf 00 	call	0x17e	; 0x17e <sendString>
+	
+
+}
+ 2ee:	ff 91       	pop	r31
+ 2f0:	ef 91       	pop	r30
+ 2f2:	bf 91       	pop	r27
+ 2f4:	af 91       	pop	r26
+ 2f6:	9f 91       	pop	r25
+ 2f8:	8f 91       	pop	r24
+ 2fa:	7f 91       	pop	r23
+ 2fc:	6f 91       	pop	r22
+ 2fe:	5f 91       	pop	r21
+ 300:	4f 91       	pop	r20
+ 302:	3f 91       	pop	r19
+ 304:	2f 91       	pop	r18
+ 306:	0f 90       	pop	r0
+ 308:	0f be       	out	0x3f, r0	; 63
+ 30a:	0f 90       	pop	r0
+ 30c:	1f 90       	pop	r1
+ 30e:	18 95       	reti
+
+00000310 <__vector_1>:
+
+ISR(INT0_vect){
+ 310:	1f 92       	push	r1
+ 312:	0f 92       	push	r0
+ 314:	0f b6       	in	r0, 0x3f	; 63
+ 316:	0f 92       	push	r0
+ 318:	11 24       	eor	r1, r1
+ 31a:	2f 93       	push	r18
+ 31c:	3f 93       	push	r19
+ 31e:	4f 93       	push	r20
+ 320:	5f 93       	push	r21
+ 322:	6f 93       	push	r22
+ 324:	7f 93       	push	r23
+ 326:	8f 93       	push	r24
+ 328:	9f 93       	push	r25
+ 32a:	af 93       	push	r26
+ 32c:	bf 93       	push	r27
+ 32e:	ef 93       	push	r30
+ 330:	ff 93       	push	r31
+	sendString("maalstreg");
+ 332:	82 ea       	ldi	r24, 0xA2	; 162
+ 334:	90 e0       	ldi	r25, 0x00	; 0
+ 336:	0e 94 bf 00 	call	0x17e	; 0x17e <sendString>
+	brems();
+ 33a:	0e 94 d1 00 	call	0x1a2	; 0x1a2 <brems>
+}
+ 33e:	ff 91       	pop	r31
+ 340:	ef 91       	pop	r30
+ 342:	bf 91       	pop	r27
+ 344:	af 91       	pop	r26
+ 346:	9f 91       	pop	r25
+ 348:	8f 91       	pop	r24
+ 34a:	7f 91       	pop	r23
+ 34c:	6f 91       	pop	r22
+ 34e:	5f 91       	pop	r21
+ 350:	4f 91       	pop	r20
+ 352:	3f 91       	pop	r19
+ 354:	2f 91       	pop	r18
+ 356:	0f 90       	pop	r0
+ 358:	0f be       	out	0x3f, r0	; 63
+ 35a:	0f 90       	pop	r0
+ 35c:	1f 90       	pop	r1
+ 35e:	18 95       	reti
+
+00000360 <_exit>:
+ 360:	f8 94       	cli
+
+00000362 <__stop_program>:
+ 362:	ff cf       	rjmp	.-2      	; 0x362 <__stop_program>
