@@ -58,6 +58,8 @@ volatile uint16_t msec = 0;	//millisecond counter, incremented every millisecond
 static int sampleTime = 50; // how many times the sampleTimeCounter needs to increment for the to be taken another accelerometer measurement.
 static int sampleTimeCounter;
 volatile int afstand = 0;
+volatile int maalstregscounter; // counts how many times the car has driven over the finish line.
+volatile int safetyFactor; // controls the regulation of speed each lap.
 
 
 
@@ -75,8 +77,8 @@ int main(void)
 	
 	//==============
 	_delay_ms(3000);
-	setpointPWM = 0;
-	OCR2 = setpointPWM;
+	setpointPWM =  0;
+	OCR2 = (255/100)*setpointPWM;
 	PORTB = 0xFF;
 	int mainstate = 1;
 	int Old_state;
@@ -85,9 +87,12 @@ int main(void)
 	
 	sendString("initDone");
 	
+	
+	
     while (1) 
     {
-		OCR2 = (255/100)*setpointPWM;
+	
+
 			
 		switch(mainstate){
 			case 1:{
@@ -108,6 +113,18 @@ int main(void)
 			case 3: if (containsChar(inputBuffer, 's',8)){
 				sendString("started:");
 				setpointPWM = 60;
+				mainstate = 4;
+				break;
+			}
+
+			case 4: if (containsChar(inputBuffer, 'k',8)){
+				setpointPWM = 100;
+				mainstate = 4;
+				break;
+			}
+						
+			case 5: if (containsChar(inputBuffer, 'b',8)){
+				brems();
 				mainstate = 1;
 				break;
 			}
@@ -159,7 +176,7 @@ void INITadc(void){
 	}
 
 void INITexternalInterrupt(void){
-	MCUCR = (1<<ISC11)|(1<<ISC10)|(1<<ISC01)|(0<<ISC00); //falling edge interrupt detection on EXTERNAL INTERRUPT 1 and 0
+	MCUCR = (1<<ISC11)|(1<<ISC10)|(1<<ISC01)|(1<<ISC00); //rising edge interrupt detection on EXTERNAL INTERRUPT 1 and 0
 	GICR = (1<<INT0)|(1<<INT1);
 }
 
@@ -184,27 +201,30 @@ int maaleBaneFunction(void){
 	int Old_state;
 	int setpointPWM = 50;
 	
-	
-	
-	afstand = 0;
-	msec = 0;
+	_delay_ms(2000);
+	maalstregscounter = 0;
+	safetyFactor = 8;
+	do {
 	OCR2 = (255/100)*setpointPWM;
 	
-	//bane[baneIndex++] = afstand;
-	bane[baneIndex++] = msec;
+	} while(maalstregscounter == 0);
+	
+	afstand = 0;
+	
+	
+	bane[baneIndex++] = afstand;
 	
 	
 	
 	do{
-		Old_state = SwingState;
+		if (maalstregscounter == 2)
+			break;
 		if (Old_state != SwingState){
 			Old_state =	SwingState;
-			//bane[baneIndex++] = afstand;
-			bane[baneIndex++] = msec;
-			
+			bane[baneIndex++] = afstand;
 		}
 		
-	}while(baneIndex < 5);
+	}while(baneIndex < 50);
 	
 	sendString("Locations of swings:");
 	for (int i = 1 ; i < 5; i++){
@@ -223,44 +243,74 @@ void maaleBaneFunctionMedTid(int antalSwing){
 	int bane[2*antalSwing];
 	int Old_state;
 	
-	OCR2 = (255/100)*50;
+
 	
-	sendString("sensing the track:");
-	do{
+	maalstregscounter = 0;
+	safetyFactor = 4;
+	msec = 0;
+	OCR2 = (255/100)*50;
+	while(1){
+	if (Old_state != SwingState){
+		Old_state =	SwingState;
+		baneIndex++;
+		sendStringNoNewLine("bane index");
+		sendInt(baneIndex - 1);
+		sendStringNoNewLine("time:");
+		sendInt(msec);
+	}
+	
+	if (baneIndex == antalSwing){
+		maalstregscounter++;
+		baneIndex = 0;
+		safetyFactor = safetyFactor/2;
+		msec = 0;
+		sendString("fake interrupt");
+		sendString("");
+		break;
+	}
+	}
+	sendString("maalstregscounter:");
+	sendInt(maalstregscounter);
+	
+	while (maalstregscounter == 1){
 		if (Old_state != SwingState){
 			Old_state =	SwingState;
-			if (baneIndex == 0){
-				msec = 0;
-				baneIndex = 1;
-				sendString("bane index was 0");
-			}	
-			sendString("");
-			sendStringNoNewLine("baneindex:");
-			sendInt(baneIndex);
-			sendStringNoNewLine("Time:");
 			bane[baneIndex++] = msec;
-			sendInt(bane[baneIndex-1]);
-			
+			sendString("swing");
+			sendStringNoNewLine("baneindex");
+			sendInt(baneIndex-1);
 		}
-	} while (baneIndex <= antalSwing*2);
-	
-	while (1){
-		if (Old_state == SwingState){
-			bane[++baneIndex] = msec;
+		if (baneIndex == antalSwing){
+			maalstregscounter++;
+			baneIndex = 0;
+			safetyFactor = safetyFactor/2;
 			msec = 0;
-			baneIndex = 1;
-			sendString("bane index set to 1");
-			sendString("timer set to 0");
+			sendString("fake interrupt");
 			break;
 		}
 	}
+	
+	//===================
+
+	
 	sendString("sensing done:");
+	
+	sendString("Locations of swings:");
+	for (int i = 1 ; i <= antalSwing; i++){
+		sendStringNoNewLine("Turn:");
+		sendInt(i);
+		sendStringNoNewLine("Time:");
+		sendInt(bane[i]);
+	}
+	OCR2 = 0;
 	
 	
 	while(1){
 		switch (SwingState){
 			case STRAIGHT:{
-				if((msec+bremseVar) == bane[baneIndex]){
+				OCR2 = (255/100)*60; 
+				if((msec+bremseVar) >= bane[baneIndex+1]){
+					sendString("");
 					sendStringNoNewLine("Time:");
 					sendInt(bane[baneIndex]);
 					brems();
@@ -273,15 +323,21 @@ void maaleBaneFunctionMedTid(int antalSwing){
 				OCR2 = 100;
 				break;
 			}
+		
+		if (baneIndex == antalSwing){
+			maalstregscounter++;
+			baneIndex = 0;
+			safetyFactor = safetyFactor/2;
+			msec = 0;
+			sendString("fake interrupt");
+			break;
 		}
-		if (baneIndex <= antalSwing*2)
-			baneIndex = 0; 
 		
 		if (containsChar(inputBuffer, 's', 8))
 			break;
 	}
-	
-}
+	}
+ }
 
 int SwingDetector(int y){
 	
@@ -291,22 +347,24 @@ int SwingDetector(int y){
 		case STRAIGHT:
 		if (y > (SetpointLEFTturn)){
 			SwingState = LEFT;
+/*
 			sendString("");
 			sendString("Left");
 			//sendInt(ACCvalue);
 			
 			sendStringNoNewLine("Time in ms:");
-			sendInt(msec);
+			sendInt(msec);*/
 			
 		}
 		else if (y < (SetpointRIGHTturn)){
 			SwingState = RIGHT;
+/*
 			sendString("");
 			sendString("Right");
 			//sendInt(ACCvalue);
 			
 			sendStringNoNewLine("Time in ms:");
-			sendInt(msec);
+			sendInt(msec);*/
 		}
 		break;
 		
@@ -314,12 +372,13 @@ int SwingDetector(int y){
 		case LEFT:
 		if (y < (SetpointLEFTturn-ACCerror)){
 			SwingState = STRAIGHT;
+/*
 			sendString("");
 			sendString("Straight");
 			//sendInt(ACCvalue);
 			
 			sendStringNoNewLine("Time in ms:");
-			sendInt(msec);
+			sendInt(msec);*/
 			
 		}
 		break;
@@ -327,12 +386,13 @@ int SwingDetector(int y){
 		case RIGHT:
 		if (y > (SetpointRIGHTturn+ACCerror)){
 			SwingState = STRAIGHT;
+/*
 			sendString("");
 			sendString("Straight");
 			//sendInt(ACCvalue);
 			
 			sendStringNoNewLine("Time in ms:");
-			sendInt(msec);
+			sendInt(msec);*/
 		}
 		break;
 		
@@ -358,7 +418,7 @@ void brems(){
 	sendString("BREEEEEMS");
 	PORTC = 0b00000010;
 	PORTB = 0b00000010;
-	_delay_ms(250);
+	_delay_ms(1000);
 	PORTC = 0b00000000;
 	PORTB = 0b00000000;
 }
@@ -476,9 +536,15 @@ ISR(USART_RXC_vect){
 
 }
 
-ISR(INT0_vect){ //external interrupt PD2.
-	sendString("maalstreg");
+ISR(INT0_vect){ //external interrupt PD2. maalstreg schmidtt 
+
+	afstand++;
+	sendInt(afstand);
+}
+
+ISR(INT1_vect){
 	brems();
+	
 }
 
 ISR(TIMER0_COMP_vect){
