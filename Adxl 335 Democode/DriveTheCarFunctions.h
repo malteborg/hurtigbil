@@ -2,7 +2,7 @@
 #define DRIVETHECARFUNCTIONS_H_
 
 #include <stdint.h>
-#include "DriveTheCarFunctions.c"
+
 
 
 void USART_ReadUntilCR(char* buffer, uint8_t bufferSize);

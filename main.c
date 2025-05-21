@@ -13,6 +13,9 @@
 #define STRAIGHT 0
 #define LEFT 1
 #define RIGHT 2
+#define SWING 4
+#define NOTSWING 5
+#define afterBRAKE 6
 //========= Moving average filter========
 #define ADC_BUFFER_SIZE 6 // Number of samples for the moving average
 
@@ -24,7 +27,7 @@ volatile uint16_t filteredADCValue = 0;       // Filtered ADC value (moving aver
 void portsetup(void);
 void INITuart(void);
 void INITadc(void);
-int maaleBaneFunction(void);
+void maaleBaneFunction(void);
 void INITexternalInterrupt(void);
 int SwingDetector(int y);
 void PWM_init();
@@ -41,15 +44,21 @@ void updateMovingAverage(uint16_t newValue);
 void INITtimer0(void);
 void accelerometer();
 void maaleBaneFunctionMedTid(int antalSwing);
+float calculateDistance(int sampleCount);
+void calculateSpeedFunction(int dist2, int tid2);
+void calculateMovingAVGSpeedFunction(uint8_t newSpeedValue);
+void countersReset();
+void DriveSuperFastFunction();
+void INITtimer1();
 
 
 volatile int ACCvalue = 0;
 volatile int SwingState = STRAIGHT;
 volatile int setpointPWM = 0;
 volatile int readIntCMD;
-volatile int SetpointRIGHTturn = 70; //dec = 70
+volatile int SetpointRIGHTturn = 75; //dec = 70
 volatile int SetpointLEFTturn = 95; //dec = 240
-volatile int SetpointSTRAIGHT = 90; //dec = 127
+volatile int SetpointSTRAIGHT = 85; //dec = 127
 volatile char inputBuffer[8]; // circular buffer
 volatile int UARTbufferIndex = 0; //circular buffer index
 volatile int UARTrecievedLatch = 0; //Sets the latch high when the uart recieve interrupt is triggered so that the code can react.
@@ -58,10 +67,12 @@ volatile char commandchar; // char received from the UART UDR.
 volatile uint16_t msec = 0;	//millisecond counter, incremented every millisecond.
 static int sampleTime = 50; // how many times the sampleTimeCounter needs to increment for the to be taken another accelerometer measurement.
 static int sampleTimeCounter;
+volatile uint16_t sampleCount = 0;
+volatile int bane[50] = {0}; // array of the track.
 volatile uint16_t afstand = 0;
 volatile int maalstregscounter; // counts how many times the car has driven over the finish line.
 volatile int safetyFactor; // controls the regulation of speed each lap.
-volatile int baneIndex = 0; //notes in what swing on the track the car is in.
+volatile int baneIndex = 1; //notes in what swing on the track the car is in.
 volatile int Timer1overflow = 0;
 volatile int speed = 0;		//speed of the car
 volatile int speedsum = 0;  //the sum of all the speed values in the speed buffer.
@@ -113,6 +124,7 @@ int main(void)
 			case 2: if (containsChar(inputBuffer, 'm', 8)){
 				sendString("maal bane function.");
 				maaleBaneFunction();
+				DriveSuperFastFunction();
 				mainstate = 3; 
 				setpointPWM = 0;
 				clearInputBuffer();
@@ -130,7 +142,7 @@ int main(void)
 				OCR2 = (setpointPWM * 255)/100;
 				_delay_ms(1000);
 				sendString("maaling start:");
-				afstand = 0;
+				sampleCount = 0;
 				_delay_ms(1000);
 				OCR2 = 0;
 				
@@ -196,7 +208,7 @@ void INITadc(void){
 
 void INITexternalInterrupt(void){
 	MCUCR = (1<<ISC01)|(1<<ISC00) //rising edge interrupt detection on EXTERNAL INTERRUPT 0 (Goal sensor)
-			|(1<<ISC11)|(0<<ISC10); //rising edge interrupt detection on EXTERNAL INTERRUPT 1 (Distance sensor)
+			|(1<<ISC11)|(1<<ISC10); //rising edge interrupt detection on EXTERNAL INTERRUPT 1 (Distance sensor)
 	GICR = (1<<INT0)|(1<<INT1); //enables interrupt vector for EXT interrupt 1 and 0
 }
 
@@ -221,12 +233,13 @@ void INITtimer1(){
 
 }
 
-int maaleBaneFunction(void){
+void maaleBaneFunction(void){
 	
-	int bane[50];
-	baneIndex = 0;
-	int Old_state;
+
+	int amountOfTurns = 0;
+	int Old_state = STRAIGHT;
 	int setpointPWM = 45;
+	int distance = 0;
 	
 	_delay_ms(2000);
 	maalstregscounter = 0;
@@ -238,37 +251,106 @@ int maaleBaneFunction(void){
 	
 	
 	sendString("sensing....");
-	TCNT1 = 0; //resets the Timer 1 counte
-	afstand = 0;
-	//bane[baneIndex++] = afstand;
-	
-	
+	TCNT1 = 0; //resets the Timer 1 counter
+	sampleCount = 0;
+	countersReset();
 	
 	do{
-		if (maalstregscounter == 2)
-			break;
 		if (Old_state != SwingState){
 			Old_state =	SwingState;
-			bane[baneIndex++] = afstand;
+			bane[baneIndex] = sampleCount;
+			sendInt(baneIndex);
+			sendString("");
+			baneIndex++;	
+			amountOfTurns = baneIndex;
 		}
 		
-	}while(baneIndex < 50);
+	}while(baneIndex < 50 && maalstregscounter < 2);
 	
-	OCR2 = 0;
-// 	sendStringNoNewLine("bane index: ");
-// 	sendInt(baneIndex);
-// 	sendString("Locations of swings:");
-	for (int i = 1 ; i < 8; i++){
+	
+	sendStringNoNewLine("bane Index: ");
+	sendInt(amountOfTurns);
+// 	 _delay_ms(900); // make the car drive a little longer because i´m lazy......
+// 	OCR2 = 0;
+
+	for (int i = 1 ; i < amountOfTurns; i++){
 		sendStringNoNewLine("Turn:");
 		sendInt(i);
 		sendStringNoNewLine("Distance from start: ");
-		sendInt(bane[i]);	
+		float distance = calculateDistance(bane[i]);
+		sendInt((int)distance);	
 		sendString("---------------------");
 	}
 
-	return bane[50];
 }
 
+void DriveSuperFastFunction(){
+	int BreakDistance = 50;
+	int distance;
+	safetyFactor = 4;
+	baneIndex = 1;
+	int DriveState = NOTSWING;
+	sendString("");
+	sendString("Drive SUPER FAST Function....");
+	
+	while(maalstregscounter < 2 ){ //wait for the 
+		OCR2 = (45 * 255)/100;
+	}
+	
+	while (1){
+		setpointPWM = 60;
+		
+		switch (DriveState){
+			case NOTSWING:{
+				sendString("notswing");
+				OCR2 = (setpointPWM * 255)/100;	
+				
+				sendStringNoNewLine("BaneIndex: ");
+				sendInt(baneIndex);			
+				sendStringNoNewLine("bane[baneindex] = ");
+				sendInt(bane[baneIndex]);
+				
+				while(1){
+					if (sampleCount >= (bane[baneIndex]-BreakDistance*safetyFactor)){
+
+						brems();
+						sendStringNoNewLine("Distance: ");
+						sendInt((sampleCount + BreakDistance)*safetyFactor);
+						
+						DriveState = afterBRAKE;
+						break;
+					}
+				}
+				
+			}
+			
+			case afterBRAKE:{
+				sendString("afterbrake");
+				do{
+					OCR2 = (50 * 255)/100;
+					if(sampleCount >= bane[baneIndex]){
+						baneIndex++;
+						DriveState = SWING;
+						break;
+					}
+				}while(baneIndex<50);
+				
+			}
+			
+			case SWING: {
+				sendString("swing");
+				while(1){
+					if (sampleCount <= bane[baneIndex]){
+						OCR2 = (45 * 255)/100;
+						baneIndex++;
+						DriveState = NOTSWING;
+					}
+				}
+			}
+			
+		}
+	}
+}
 void maaleBaneFunctionMedTid(int antalSwing){
 	int baneIndex = 0;
 	int bremseVar = 1000;
@@ -381,22 +463,24 @@ int SwingDetector(int y){
 			SwingState = LEFT;
 /*
 			sendString("");
-			sendString("Left");
+			sendString("Left");*/
+/*
 			//sendInt(ACCvalue);
 			
-			sendStringNoNewLine("afstand fra start:");
-			sendInt(afstand);*/
-			
+			sendStringNoNewLine("sampleCount fra start:");
+			sendInt(sampleCount);
+			*/
 		}
 		else if (y < (SetpointRIGHTturn)){
 			SwingState = RIGHT;
 /*
 			sendString("");
-			sendString("Right");
+			sendString("Right");*/
+/*
 			//sendInt(ACCvalue);
 			
-			sendStringNoNewLine("afstand fra start:");
-			sendInt(afstand);*/
+			sendStringNoNewLine("sampleCount fra start:");
+			sendInt(sampleCount);*/
 		}
 		break;
 		
@@ -406,11 +490,12 @@ int SwingDetector(int y){
 			SwingState = STRAIGHT;
 /*
 			sendString("");
-			sendString("Straight");
+			sendString("Straight");*/
+/*
 			//sendInt(ACCvalue);
 			
-			sendStringNoNewLine("afstand fra start:");
-			sendInt(afstand);*/
+			sendStringNoNewLine("sampleCount fra start:");
+			sendInt(sampleCount);*/
 			
 		}
 		break;
@@ -420,11 +505,12 @@ int SwingDetector(int y){
 			SwingState = STRAIGHT;
 /*
 			sendString("");
-			sendString("Straight");
+			sendString("Straight");*/
+/*
 			//sendInt(ACCvalue);
 			
-			sendStringNoNewLine("afstand fra start:");
-			sendInt(afstand);*/
+			sendStringNoNewLine("sampleCount fra start:");
+			sendInt(sampleCount);*/
 		}
 		break;
 		
@@ -447,7 +533,7 @@ void PWM_init()
 void brems(){
 	sendString("BREEEEEMS");
 	PORTC = 0b00000010;
-	_delay_ms(1000);
+	_delay_ms(225);
 	PORTC = 0b00000000;
 }
 
@@ -544,7 +630,42 @@ void updateMovingAverage(uint16_t newValue) {
 	filteredADCValue = adcSum / ADC_BUFFER_SIZE;
 }
 
-void calculateSpeedFunction(uint8_t newSpeedValue){
+float calculateDistance(int sampleCount){
+	afstand = 5.1*sampleCount;
+	return afstand;
+}
+
+void calculateSpeedFunction(int dist2, int tid2){
+    static int tid1 = 0, dist1 = 0;
+    int deltaTid, deltaDist;
+
+    deltaTid = tid2 - tid1;
+    deltaDist = dist2 - dist1;
+
+ 
+    if (deltaTid != 0) {   // Avoid division by zero
+	    speed = deltaDist / deltaTid;
+	    } 
+		else {
+	    speed = 0;
+    }
+
+    tid1 = tid2;
+    dist1 = dist2;
+
+}
+
+
+//resets all "running" counters.
+void countersReset(){ 
+	sampleCount = 0;
+	msec = 0;
+	TCNT1 = 0;
+	baneIndex = 1;
+	
+}
+
+void calculateMovingAVGSpeedFunction(uint8_t newSpeedValue){
 	
 	speedsum -= speedBuffer[speedBufferIndex];
 	
@@ -585,21 +706,31 @@ ISR(USART_RXC_vect){
 }
 
 ISR(INT0_vect){ //external interrupt PD2. maalstreg schmidtt 
-	maalstregscounter++;
-	baneIndex = 0;
-	safetyFactor = safetyFactor/2;
-	sendStringNoNewLine("maalstregscounter: ");
-	sendInt(maalstregscounter);
+    static uint16_t lastMaalstregTime = 0;
+    uint16_t now = msec;
+    if ((uint16_t)(now - lastMaalstregTime) > 50) { // 50 ms debounce
+	    lastMaalstregTime = now;
+	    maalstregscounter++;
+	    countersReset();
+	    safetyFactor = safetyFactor/2;
+	    sendStringNoNewLine("maalstregscounter: ");
+	    sendInt(maalstregscounter);
+    }
+    
 }
 
 ISR(INT1_vect){ // external interrupt PD3. distance
-		afstand = TCNT1;
+		sampleCount = TCNT1;
 	
 }
 
-ISR(TIMER0_COMP_vect){
-
+ISR(TIMER0_COMP_vect){ //every ms this interrupt triggers
+	msec++;
 	accelerometer();
+	afstand = calculateDistance(sampleCount);
+	calculateSpeedFunction(afstand, msec);
+	
+	
 }
 ISR(TIMER1_OVF_vect){
 	sendString("Timer 1 Overflow");

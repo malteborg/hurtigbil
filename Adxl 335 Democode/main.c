@@ -2,6 +2,7 @@
  * Created: 11-02-2025 14:24:22 - Author: JJ
  */ 
 #include "UART_driver.h"
+#include "UART_driver.c"
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
@@ -9,13 +10,26 @@
 #include <string.h>
 #include <time.h>
 #include <util/delay.h>
-#include "DriveTheCarFunctions.h"
 #include "GForce.h"
-#include "maalbaneFunction.c"
+
+
+#define baudRate 9600
+// Define constants for SwingState values
+#define STRAIGHT 0
+#define LEFT 1
+#define RIGHT 2
 void Port_init();            // Prototype til funktionen ...
 void Init_ADCxyz(uint8_t);   // Prototype til funktionen ...
 void ADXL335_logger();       // Prototype til funktionen ...
 void PWM_init();
+void Timer1_init();
+
+void INITuart(void);
+void INITadc(void);
+int maaleBaneFunction(void);
+void INITSwingDetector(void);
+void INITexternalInterrupt(void);
+int SwingDetector(int y);
 
 int  X,Y,Z;                  // The X,Y,Z values from the Acc-meter
 char CR_LF = 1;              // True => CR + LF,  False => CR only
@@ -31,17 +45,18 @@ int main(void)
     uint8_t setSpeed = 0;         // set-point for desired speed, starts at 0
     uint8_t CMD_Latch;
     uint8_t ReadDone;
-	int SwingState;			//State of swing, LEFT, RIGHT, STRAIGHT
-	int Old_state;			// logically OLD state
+	int SwingState = STRAIGHT;			//State of swing, LEFT, RIGHT, STRAIGHT
+	int Old_state = 0;			// logically OLD state
 	
 
 
     PWM_init();
+	Timer1_init();
     Port_init();
     Init_Serial_Port_and_FIFO(9600);  // 9600, 14400, 19200, 38400, 57600, 115200 standards
     INITSwingDetector();
-    INITadc();
-    INITexternalInterrupt();
+    //INITadc();
+    //INITexternalInterrupt();
 	
 	sei();                            // Enable Global Interrupt
     writestr("Tryk z for speed control.", CR+LF);
@@ -54,7 +69,11 @@ int main(void)
 
     
     while (1) {
-		// Læs et tegn fra UART
+		
+		
+
+		
+		// Læs et tegn fra UART	
 		if (ch = read()){
 			
 	    // Tjek for gyldige kommandoer, ellers spring iterationen over
@@ -71,10 +90,8 @@ int main(void)
 			} else if (ch == 'm') {
 			MainState = 5;
 		}
-		if (Old_state != SwingState){
-			Old_state =	SwingState;
-			writestr(SwingState);
-		}
+		
+		
 		}
 	    // Switch-case, der udfører handling baseret på den modtagne kommando
 	    switch (MainState) {
@@ -88,11 +105,14 @@ int main(void)
 					setSpeed = temp;
 					if(readint()){
 						writestr("Speed set", CR+LF);
-						writestr(temp, CR+LF);
+						int temp2 =(255/10)*setSpeed;
+						writestr(temp2, CR+LF);
 					CMD_Latch = 0;
 					}
 				}
 				OCR2 = (255 / 10) * setSpeed; 
+				
+				writestr("");
 			    MainState = 0;
 				break;
 				}
@@ -137,9 +157,23 @@ int main(void)
 				break;
 				}
 			case 5: {
-				int bane[50];
-				writestr("Maaling af bane", CR+LF);
-				bane[50] = maaleBaneFunction();
+				while(1){
+					writestr("Maaling af bane", CR+LF);
+					UDR = SwingState;
+					UDR = ADCH;
+					
+					//SwingState = SwingDetector(ADCH);
+					if (Old_state != SwingState){
+						Old_state =	SwingState;
+						writestr(SwingState,CR+LF);
+					}
+				if (read() == 'm') {
+					MainState = 0;
+					writestr("Out of loop", CR+LF);
+					break;
+				}
+				writestr("Out of loop", CR+LF);
+				break;
 				MainState = 0;
 				break;
 			}
@@ -229,8 +263,8 @@ void Init_ADCxyz(uint8_t channel)
 {   
     // Right adjust result and use AREF as reference
     ADMUX  = (channel & 0x07);  // ADCx and x = channel 0..7, Creates mask for ADC ports
-    //ADCSRA  = 0b11010100;    // Start ADC, prescaler = 16 
-    ADCSRA = 0b11010100;
+    ADCSRA  = 0b11010100;    // Start ADC, prescaler = 16 
+    
 } // end Init_ADCxyz
 
 //----------------- P o r t _ i n i t () -----------------------------------------------
@@ -246,5 +280,123 @@ void Port_init()
     //------------------ Default setup for ADC - overruled with Init_ADCxyz() ------
     ADMUX = 0x20;             // Select ADC0, Left adjust result and use AREF as reference
     SFIOR &= 0b00011111;      // Select Free Running mode by clearing bit [7-5] in SFIOR register
-    ADCSRA = 0xE4;            // Start ADC, Auto trigger enabled, pre_scale = 16
+    //ADCSRA = 0xE4;            // Start ADC, Auto trigger enabled, pre_scale = 16
+	ADCSRA = (1<<ADIE)|(1<<ADEN)|(1<<ADSC)|(1<<ADPS2); //ADC enable, ADC Start conversion, ADC Interrupt enable, Prescale = 4.
+	writestr("Ports initialzed", CR+LF);
 } // end Port_init
+
+void PWM_init()
+{
+	// Set PD7 (OC2) as output
+	DDRD |= (1 << PD7);
+
+	// Configure Timer/Counter2 for Fast PWM mode
+	TCCR2 |= (1 << WGM20) | (1 << WGM21); // Fast PWM mode
+	TCCR2 |= (1 << COM21);                // Clear OC2 on compare match, set at BOTTOM
+	TCCR2 |= (1 << CS21);                 // Set prescaler to 8 (start the timer)
+	writestr("PWM initialzed", CR+LF);
+	// Set initial duty cycle (e.g., 50%)
+	//OCR2 = 128; // 50% duty cycle (128/255)
+}
+
+// Initialize Timer1
+void Timer1_init() {
+	TCCR1A = 0x00; // Normal mode
+	TCCR1B = (1 << CS11); // Prescaler = 8
+	TCNT1 = 0; // Initialize counter to 0
+}
+
+void INITuart(void){
+	DDRB = 0xFF; //set PORTB as output.
+	UBRRH = 0;
+	UBRRL = F_CPU/16*(baudRate)-1;		//Set baudrate to 9600
+	UCSRB = (1<<RXCIE)|(1<<RXEN)|(1<<TXEN); // RX Complete interrupt enable, Reciever enable, Transmitter enable.
+	
+}
+void INITadc(void){
+	DDRA = 0; //PORT A as input
+	PORTA = 0xFF; //internal resistor ON.
+	ADMUX = (1<<ADLAR); //AREF internal Vref turned off, Left adj, channel 0.
+	ADCSRA = (1<<ADIE)|(1<<ADEN)|(1<<ADSC)|(1<<ADPS1); //ADC enable, ADC Start conversion, ADC Interrupt enable, Prescale = 4.
+}
+
+void INITexternalInterrupt(void){
+	MCUCR = (1<<ISC11)|(1<<ISC10)|(1<<ISC01)|(1<<ISC00); //Rising edge interrupt detection on EXTERNAL INTERRUPT 1 and 0
+	GICR = (1<<INT0)|(1<<INT1);
+}
+
+
+int maaleBaneFunction(void){
+	int SwingState;
+	int bane[50];
+	int baneIndex = 0;
+	int Old_state;
+	int Afstand = 0;
+	
+	bane[baneIndex++] = Afstand;
+	
+	Old_state = SwingState;
+	
+	while (1){
+		if (Old_state != SwingState){
+			Old_state =	SwingState;
+			bane[baneIndex++] = Afstand;
+		}
+		
+	}
+	
+	return bane[50];
+}
+
+void INITSwingDetector(void){
+	static char SwingState = STRAIGHT;
+	static int ACCerror = 10;
+	static int SetpointLEFTturn = 220;
+	static int SetpointRIGHTturn = 100;
+	static int SetpointSTRAIGHT = 130;
+	
+}
+
+int SwingDetector(int y){
+	static int SwingState;
+	static int ACCerror = 0x0A;			//dec = 10
+	static int SetpointRIGHTturn = 100; //dec = 70
+	static int SetpointLEFTturn = 155; //dec = 240
+	static int SetpointSTRAIGHT = 0x7F; //dec = 127
+	
+	switch (SwingState){
+		case STRAIGHT:
+		if (y > (SetpointLEFTturn)){
+			SwingState = LEFT;
+			;
+		}
+		if (y < (SetpointSTRAIGHT - SetpointRIGHTturn)){
+			SwingState = RIGHT;
+			
+		}
+		break;
+		
+		
+		case LEFT:
+		if (y < (SetpointLEFTturn-ACCerror)){
+			SwingState = STRAIGHT;
+		}
+		break;
+		
+		case RIGHT:
+		if (y > (SetpointSTRAIGHT-SetpointRIGHTturn+ACCerror)){
+			SwingState = STRAIGHT;
+		}
+		break;
+		
+	}
+	return SwingState;
+}
+
+ISR(ADC_vect){
+	
+	volatile int ACCvalue = ADCH;
+	writestr(ADCH, CR+LF);
+	
+	ADCSRA |= (1<<ADSC); // Start conversion.
+}
