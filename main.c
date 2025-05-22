@@ -6,6 +6,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
+#include <math.h>
 
 
 #define baudRate 9600
@@ -289,11 +290,13 @@ void maaleBaneFunction(void){
 }
 
 void DriveSuperFastFunction(){
-	int BreakDistance = 50;
+	int BreakDistance = 100;
+	int BreakDistanceSF = 1;
 	int distance;
 	safetyFactor = 3;
 	baneIndex = 1;
 	int DriveState = NOTSWING;
+	float INCfactor = 1; 
 	sendString("");
 	sendString("Drive SUPER FAST Function....");
 	sendString(" ");
@@ -307,8 +310,18 @@ void DriveSuperFastFunction(){
 	
 	while (1){
 
+		INCfactor = 100*(1-exp(-0.2*maalstregscounter));
+		BreakDistanceSF = (INCfactor/100)+1;
 		
-		
+		sendStringNoNewLine("inc factor:");
+		sendInt(INCfactor);
+		setpointPWM = INCfactor;
+			if (setpointPWM<50){
+				setpointPWM = 50;
+			}
+		sendStringNoNewLine("PWM:");
+		sendInt(setpointPWM);
+			
 		sendString("-----");
 		sendStringNoNewLine("Lap nr.");
 		sendInt(maalstregscounter);
@@ -324,15 +337,15 @@ void DriveSuperFastFunction(){
 				sendStringNoNewLine("Location: ");
 				sendInt(bane[baneIndex]);
 				sendStringNoNewLine("SafetyFactor: ");
-				sendInt(safetyFactor);
+				sendInt(BreakDistanceSF);
 				sendString("--------");
 				if (baneIndex > amountOfTurns)
 					baneIndex = 1;
 				while(1){
-					if (sampleCount >= (bane[baneIndex]-BreakDistance*safetyFactor)){
+					if (sampleCount >= (bane[baneIndex]-BreakDistance*BreakDistanceSF)){
 						brems();
 						sendStringNoNewLine("braked at distance: ");
-						sendInt(bane[baneIndex]-BreakDistance*safetyFactor);
+						sendInt(bane[baneIndex]-BreakDistance*BreakDistanceSF);
 						DriveState = afterBRAKE;
 						break;
 					}
@@ -360,10 +373,13 @@ void DriveSuperFastFunction(){
 			case SWING: {
 				sendString("swing");
 				while(1){
-					if (sampleCount >= bane[baneIndex]){
+					if (sampleCount + 50 >= bane[baneIndex]){
 						OCR2 = (45 * 255)/100;
 						sendString("out of swing");
-						baneIndex++;
+						if (baneIndex >= amountOfTurns)
+							baneIndex = 1;
+						else baneIndex++;
+						
 						DriveState = NOTSWING;
 						break;
 					}
