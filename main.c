@@ -18,7 +18,7 @@
 #define NOTSWING 5
 #define afterBRAKE 6
 //========= Moving average filter========
-#define ADC_BUFFER_SIZE 4 // Number of samples for the moving average
+#define ADC_BUFFER_SIZE 8 // Number of samples for the moving average
 
 volatile uint16_t adcBuffer[ADC_BUFFER_SIZE]; // Buffer to store ADC values
 volatile uint8_t adcBufferIndex = 0;          // Index to track the current position in the buffer
@@ -56,9 +56,8 @@ void INITtimer1();
 volatile int ACCvalue = 0;
 volatile int SwingState = STRAIGHT;
 volatile int setpointPWM = 0;
-volatile int readIntCMD;
-volatile int SetpointRIGHTturn = 78; //dec = 70
-volatile int SetpointLEFTturn = 92; //dec = 240
+volatile int SetpointRIGHTturn = 81; //dec = 70
+volatile int SetpointLEFTturn =89; //dec = 240
 volatile int SetpointSTRAIGHT = 85; //dec = 127
 volatile char inputBuffer[8]; // circular buffer
 volatile int UARTbufferIndex = 0; //circular buffer index
@@ -66,7 +65,7 @@ volatile int UARTrecievedLatch = 0; //Sets the latch high when the uart recieve 
 volatile int receivedByte; // byte from the UART UDR register.
 volatile char commandchar; // char received from the UART UDR.
 volatile uint16_t msec = 0;	//millisecond counter, incremented every millisecond.
-static int sampleTime = 50; // how many times the sampleTimeCounter needs to increment for the to be taken another accelerometer measurement.
+static int sampleTime = 50; // how many times the sampleTimeCounter needs to increment before another accelerometer measurement is taken.
 static int sampleTimeCounter;
 volatile uint16_t sampleCount = 0;
 volatile int bane[50] = {0}; // array of the track.
@@ -80,6 +79,7 @@ volatile int speed = 0;		//speed of the car
 volatile int speedsum = 0;  //the sum of all the speed values in the speed buffer.
 volatile int speedBuffer[8];	//buffer for calculating the speed of the car.
 volatile int speedBufferIndex = 0; //index for the speed calculation buffer.
+volatile int laptime = 0;
 
 
 
@@ -133,31 +133,6 @@ int main(void)
 				mainstate = 3; 
 				setpointPWM = 0;
 				clearInputBuffer();
-				break;
-			}
-			case 3: if (containsChar(inputBuffer, 's',8)){
-				sendString("started:");
-				setpointPWM = 60;
-				mainstate = 4;
-				break;
-			}
-
-			case 4: if (containsChar(inputBuffer, 'k',8)){
-				setpointPWM = 50;
-				OCR2 = (setpointPWM * 255)/100;
-				_delay_ms(1000);
-				sendString("maaling start:");
-				sampleCount = 0;
-				_delay_ms(1000);
-				OCR2 = 0;
-				
-				mainstate = 4;
-				break;
-			}
-						
-			case 5: if (containsChar(inputBuffer, 'b',8)){
-				brems();
-				mainstate = 1;
 				break;
 			}
 				
@@ -290,7 +265,7 @@ void maaleBaneFunction(void){
 }
 
 void DriveSuperFastFunction(){
-	int BreakDistance = 100;
+	int BreakDistance = 150;
 	int BreakDistanceSF = 1;
 	int distance;
 	safetyFactor = 3;
@@ -310,7 +285,7 @@ void DriveSuperFastFunction(){
 	
 	while (1){
 
-		INCfactor = 100*(1-exp(-0.2*maalstregscounter));
+		INCfactor = 100*(1-exp(-0.3*maalstregscounter));
 		BreakDistanceSF = (INCfactor/100)+1;
 		
 		sendStringNoNewLine("inc factor:");
@@ -571,7 +546,7 @@ void PWM_init()
 void brems(){
 	sendString("BREEEEEMS");
 	PORTC = 0b00000010;
-	_delay_ms(225);
+	_delay_ms(150);
 	PORTC = 0b00000000;
 }
 
@@ -746,6 +721,8 @@ ISR(USART_RXC_vect){
 ISR(INT0_vect){ //external interrupt PD2. maalstreg schmidtt 
     static uint16_t lastMaalstregTime = 0;
     uint16_t now = msec;
+	sendStringNoNewLine("LT:");
+	sendInt(msec);
     if ((uint16_t)(now - lastMaalstregTime) > 50) { // 50 ms debounce
 	    lastMaalstregTime = now;
 	    maalstregscounter++;
