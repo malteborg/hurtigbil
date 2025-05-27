@@ -111,8 +111,6 @@ int main(void)
 	int mainstate = 1;
 	int Old_state;
 	
-	
-	
 
 	sendString("initDone");
 	
@@ -241,13 +239,13 @@ void maaleBaneFunction(void){
 		float distance = calculateDistance(bane[i]);
 		sendInt((int)distance);	
 		sendString("---------------------");
-	}*/
+	}
+*/
 
 }
 
 void DriveSuperFastFunction(){
 	int BreakDistance = 100;
-	int BreakDistanceSF = 1;
 	int distance;
 	safetyFactor = 3;
 	baneIndex = 1;
@@ -271,11 +269,11 @@ void DriveSuperFastFunction(){
 		INCfactor = 100*(1-exp(-0.3*maalstregscounter));
 		/*BreakDistanceSF = (INCfactor/100)+1;*/
 		
-		sendStringNoNewLine("inc factor:");
+		sendStringNoNewLine("PWM%:");
 		sendInt(INCfactor);
 		setpointPWM = INCfactor;
 			if (setpointPWM<50){
-				setpointPWM = 70;
+				setpointPWM = 50;
 			}
 /*
 		sendStringNoNewLine("PWM:");
@@ -287,13 +285,12 @@ void DriveSuperFastFunction(){
 		switch (DriveState){
 			case NOTSWING:{
 				sendString("----");
-				sendString("next swing");
 				OCR2 = (setpointPWM * 255)/100;	
 				
 				sendStringNoNewLine("BaneIndex: ");
 				sendInt(baneIndex);			
 				sendStringNoNewLine("Location: ");
-				sendInt(bane[baneIndex]);
+				sendInt(bane[baneIndex]*5.1);
 
 				
 
@@ -311,24 +308,34 @@ void DriveSuperFastFunction(){
 				int afstandMellemSving;
 				if(baneIndex == 1){
 					afstandMellemSving = baneLaengde - bane[amountOfTurns] + bane[1];
+/*
+					sendStringNoNewLine("banelængde: ");
+					sendInt(baneLaengde*5);
+					
+					sendStringNoNewLine("sidste sving: ");
+					sendInt(bane[amountOfTurns]*5);
+					
+					sendStringNoNewLine("første sving: ");
+					sendInt(bane[1]*5);*/
+					
 					sendStringNoNewLine("Afstand maalstreg: ");
-					sendInt(afstandMellemSving);
+					sendInt(afstandMellemSving*5);
 				}
 				else{
 					afstandMellemSving = bane[baneIndex+1] - bane[baneIndex];
 					sendStringNoNewLine("Afstand mellem sving: ");
-					sendInt(afstandMellemSving);
+					sendInt(afstandMellemSving*5);
 					}
 				
-				BreakDistance = afstandMellemSving * 0.3;
+				BreakDistance = afstandMellemSving * 0.7;
 
 				
 				while(1){
-					if (sampleCount >= (bane[baneIndex]-BreakDistance*BreakDistanceSF)){
+					if (sampleCount >= (bane[baneIndex]-BreakDistance)){
 						/*if(speed>=bremseGraense) brems();*/
 						brems();
 						sendStringNoNewLine("braked at distance: ");
-						sendInt(bane[baneIndex]-BreakDistance*BreakDistanceSF);
+						sendInt(BreakDistance);
 						DriveState = afterBRAKE;
 						break;
 					}
@@ -339,8 +346,6 @@ void DriveSuperFastFunction(){
 			case afterBRAKE:{
 				sendString("afterbrake");
 				sendString(" ");
-				sendStringNoNewLine("bane index: ");
-				sendInt(baneIndex);
 				
 				do{
 					OCR2 = (45 * 255)/100;
@@ -354,17 +359,13 @@ void DriveSuperFastFunction(){
 			}
 			
 			case SWING: {
-				sendString("swing");
 				while(1){
 					if (sampleCount + udAfSvingDistance >= bane[baneIndex]){
 						OCR2 = (45 * 255)/100;
-						sendString("out of swing");
 						if (baneIndex >= amountOfTurns){
 							baneIndex = 1;
 						}
 						baneIndex++;
-						sendString("Sving increment");
-						
 						DriveState = NOTSWING;
 						break;
 					}
